@@ -2,11 +2,14 @@ package com.example.iguest.myapplication;
 
         import java.io.File;
         import java.io.FileNotFoundException;
+        import java.io.FileOutputStream;
         import java.io.IOException;
         import java.text.SimpleDateFormat;
         import java.util.Date;
 
         import android.app.Activity;
+        import android.content.Context;
+        import android.content.ContextWrapper;
         import android.content.Intent;
         import android.graphics.Bitmap;
         import android.graphics.BitmapFactory;
@@ -14,6 +17,7 @@ package com.example.iguest.myapplication;
         import android.os.Bundle;
         import android.os.Environment;
         import android.provider.MediaStore;
+        import android.util.Log;
         import android.view.View;
         import android.widget.Button;
         import android.widget.ImageView;
@@ -28,6 +32,7 @@ public class MainActivity extends Activity {
     Uri pathy;
     String mCurrentPhotoPath;
     static final int REQUEST_TAKE_PHOTO = 1;
+    Bitmap nextswag;
 
     /** Called when the activity is first created. */
     @Override
@@ -38,6 +43,7 @@ public class MainActivity extends Activity {
         textTargetUri = (TextView)findViewById(R.id.targeturi);
         targetImage = (ImageView)findViewById(R.id.targetimage);
 
+        //gallery
         buttonLoadImage.setOnClickListener(new Button.OnClickListener(){
 
             @Override
@@ -48,6 +54,7 @@ public class MainActivity extends Activity {
                 startActivityForResult(intent, 0);
             }});
 
+        //camera
         Button takeimage = (Button)findViewById(R.id.takeimage);
         takeimage.setOnClickListener(new Button.OnClickListener(){
 
@@ -57,6 +64,7 @@ public class MainActivity extends Activity {
             }
         });
 
+        //next from intent
         Button next = (Button)findViewById(R.id.nextimage);
 
         next.setOnClickListener(new Button.OnClickListener(){
@@ -66,8 +74,26 @@ public class MainActivity extends Activity {
             public void onClick(View arg0){
                 Intent nextActivity = new Intent(MainActivity.this, Next.class);
                 // add data to be passed to next activity
-                nextActivity.putExtra("path", pathy);
 
+                nextActivity.putExtra("path", pathy);
+                if (nextActivity.resolveActivity(getPackageManager()) != null) {
+                    startActivity(nextActivity);
+                }
+
+            }
+        });
+
+
+        //next from internal directory
+        Button next2 = (Button)findViewById(R.id.next2);
+
+        next2.setOnClickListener(new Button.OnClickListener(){
+
+
+            @Override
+            public void onClick(View arg0){
+                Intent nextActivity = new Intent(MainActivity.this, next2.class);
+                saveToInternalStorage(nextswag);
 
                 if (nextActivity.resolveActivity(getPackageManager()) != null) {
                     startActivity(nextActivity);
@@ -90,6 +116,7 @@ public class MainActivity extends Activity {
             Bitmap bitmap;
             try {
                 bitmap = BitmapFactory.decodeStream(getContentResolver().openInputStream(targetUri));
+                nextswag = bitmap;
                 targetImage.setImageBitmap(bitmap);
             } catch (FileNotFoundException e) {
                 // TODO Auto-generated catch block
@@ -130,6 +157,27 @@ public class MainActivity extends Activity {
                 startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
             }
         }*/
+    }
+
+    private String saveToInternalStorage(Bitmap bitmapImage){
+        ContextWrapper cw = new ContextWrapper(getApplicationContext());
+        // path to /data/data/yourapp/app_data/imageDir
+        File directory = cw.getDir("imageDir", Context.MODE_PRIVATE);
+        // Create imageDir
+        File mypath=new File(directory,"profile.jpg");
+
+        FileOutputStream fos = null;
+        try {
+            Log.v("asdf", "it ran");
+            fos = new FileOutputStream(mypath);
+
+            // Use the compress method on the BitMap object to write image to the OutputStream
+            bitmapImage.compress(Bitmap.CompressFormat.JPEG, 1, fos);
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return directory.getAbsolutePath();
     }
 
     private File createImageFile() throws IOException {
